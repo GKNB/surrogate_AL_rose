@@ -23,8 +23,8 @@ def main():
 #            )
 
     cfg = yaml.safe_load(open(args.config))
-    out_dir = os.path.join(pipeline_dir, f"iter_{args.iteration:03d}")
-    test_dir = os.path.join(pipeline_dir, f"iter_001")
+    out_dir = os.path.join(args.pipeline_dir, f"iter_{args.iteration:03d}")
+    test_dir = os.path.join(args.pipeline_dir, f"iter_001")
 
     x_train  = np.load(os.path.join(out_dir,  'scaled_x_train.npy'),  mmap_mode='r')
     y_train  = np.load(os.path.join(out_dir,  'scaled_y_train.npy'),  mmap_mode='r')
@@ -105,7 +105,7 @@ def main():
         raise Exception(f"Model of {args.model} currently not supported!!!")
 
     with open(os.path.join(out_dir, 'metrics.json'), 'w') as f:
-        json.dump(sample, f)
+        json.dump(metrics, f)
 
     print(f"[train] done iteration {args.iteration}")
 

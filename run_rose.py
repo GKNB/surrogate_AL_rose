@@ -15,28 +15,30 @@ engine = ResourceEngine({'resource': 'nersc.perlmutter_gpu',
 learner = ActiveLearner(engine=engine)
 code_path = f'{sys.executable} {os.getcwd()}'
 
-
+#FIXME!! I am utility task!!
+@learner.simulation_task
+def bootstrap(*args, pipeline_dir):
+    return Task(executable=f'{code_path}/bootstrap.py --pipeline_dir {pipeline_dir}')
+    
+#FIXME!! For this two tasks, need to specify if using GPU, and other variables!!
 @learner.training_task
-def training(*args, <extra_params>):
-    return Task(executable=f'{code_path}/train.py <extra_params>')
+def training(*args, model, config_file, iteration, pipeline_dir):
+    return Task(executable=f'{code_path}/train.py --model {model} --config {config_file} --iteration {iteration} --pipeline_dir {pipeline_dir}')
 
 @learner.active_learn_task
-def active_learning(*args, <extra_params>):
-    return Task(executable=f'{code_path}/active.py <extra_params>')
+def active_learning(*args, model, config_file, iteration, pipeline_dir):
+    return Task(executable=f'{code_path}/active.py --model {model} --config {config_file} --iteration {iteration} --pipeline_dir {pipeline_dir}')
 
-# This is to build a sub-workflow that includes training/active learning loop for a specific AL algorithm
-def teach_single_pipeline(<some_params>):
+def teach_single_pipeline(model, config_file, pipeline_dir, num_iter):
     iter_id = 0
-    train = training(<some_params>)
-    # Wait for train to finish
-    train.result()
+    print("Start doing bootstrap (only once!)")
+    bs = bootstrap(pipeline_dir=pipeline_dir)
+    bs.result()
     while iter_id < num_iter - 1:   # n iter means in total n traning and n-1 al
-        active_learn = active_learning(<some_params>)
-        # Wait for al to finish
-        active_learn.result()
-        train = training(sim, <some_params>)
-        # Wait for train to finish
-        train.result()
+        print(f"Start doing iteration {iter_id}")
+        train = training(model=model, config_file=config_file, iteration=iter_id, pipeline_dir=pipeline_dir)
+        active_learn = active_learning(train, model=model, config_file=config_file, iteration=iter_id, pipeline_dir=pipeline_dir)
+        active.result()
         iter_id += 1
 
 def teach():
@@ -44,10 +46,9 @@ def teach():
     # Some conf list we set, like seed
     conf_list = []
     async_pipeline = learner.as_async(teach_single_pipeline)
-    for model_type in ["BNN", "GPR"]:
-        for conf in conf_list:
-            submitted_pipelines.append(async_pipeline(<some params>))
-    # Execute all sub pipelines in parallel
+    for model in ["bnn", "gpr"]:
+        for config_file in conf_list:
+            submitted_pipelines.append(async_pipeline(model=model, config_file=config_file, pipeline_dir=pipeline_dir, num_iter=10))
     [p.result() for p in submitted_pipelines]
 
 teach()

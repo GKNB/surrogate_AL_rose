@@ -1,7 +1,10 @@
 #!/usr/bin/env python
-import argparse, os, yaml, torch, numpy as np
+import argparse
+import os, time
+import yaml
+import torch
+import numpy as np
 from model.models import predict_bnn, predict_gpr
-from utils.data_utils import load_and_preprocess, calculate_rmse
 
 def main():
     p = argparse.ArgumentParser()
@@ -20,14 +23,14 @@ def main():
 #            )
 
     cfg = yaml.safe_load(open(args.config))
-    in_dir   = os.path.join(pipeline_dir, f"iter_{args.iteration:03d}")
-    out_dir  = os.path.join(pipeline_dir, f"iter_{args.iteration+1:03d}")
+    in_dir   = os.path.join(args.pipeline_dir, f"iter_{args.iteration:03d}")
+    out_dir  = os.path.join(args.pipeline_dir, f"iter_{args.iteration+1:03d}")
     os.makedirs(out_dir, exist_ok=False)
 
-    x_train  = np.load(os.path.join(out_dir,  'scaled_x_train.npy'),  mmap_mode='r')
-    y_train  = np.load(os.path.join(out_dir,  'scaled_y_train.npy'),  mmap_mode='r')
-    x_remain = np.load(os.path.join(out_dir,  'scaled_x_remain.npy'), mmap_mode='r')
-    y_remain = np.load(os.path.join(out_dir,  'scaled_y_remain.npy'), mmap_mode='r')
+    x_train  = np.load(os.path.join(in_dir,  'scaled_x_train.npy'),  mmap_mode='r')
+    y_train  = np.load(os.path.join(in_dir,  'scaled_y_train.npy'),  mmap_mode='r')
+    x_remain = np.load(os.path.join(in_dir,  'scaled_x_remain.npy'), mmap_mode='r')
+    y_remain = np.load(os.path.join(in_dir,  'scaled_y_remain.npy'), mmap_mode='r')
 
     if args.model == "gpr":
         model = torch.load(os.path.join(in_dir, "model.pkl"))

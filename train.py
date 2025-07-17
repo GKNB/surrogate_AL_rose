@@ -46,7 +46,7 @@ def main():
                           cfg["white_kernel_variance"],
                           cfg["max_iterations"])
         train_time = time.time() - start_time
-        torch.save(model, os.path.join(out_dir, "model.pkl"))
+        model.pickle(os.path.join(out_dir, "model.pkl"))
 
         mean, std = predict_gpr(model, x_test)
         rmse = calculate_rmse(y_test, mean)

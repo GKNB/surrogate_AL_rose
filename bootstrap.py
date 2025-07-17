@@ -9,12 +9,13 @@ from utils import preprocess_inputdata, compute_peak_density
 
 p = argparse.ArgumentParser()
 p.add_argument("--pipeline_dir", required=True)
+p.add_argument("--input_data_dir", required=True)
 args = p.parse_args()
 
-file_path= '/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/surrogate_AL/data/'
-with open(file_path+ 'data_dump_density_preprocessed_train.pk', 'rb') as handle:
+#file_path= '/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/surrogate_AL/data/'
+with open(os.path.join(args.input_data_dir, 'data_dump_density_preprocessed_train.pk'), 'rb') as handle:
     processed_all_data_preprocessed_train = pickle.load(handle)
-with open(file_path+ 'data_dump_density_preprocessed_test.pk', 'rb') as handle:
+with open(os.path.join(args.input_data_dir, 'data_dump_density_preprocessed_test.pk'), 'rb') as handle:
     processed_all_data_preprocessed_test = pickle.load(handle)
 
 #reduce training set size by randomly excluding N data.
@@ -76,13 +77,13 @@ print("Test Output", y_test.shape)
 
 
 
-scaler = joblib.load(file_path+'scaler_new.pkl')
+scaler = joblib.load(os.path.join(args.input_data_dir, 'scaler_new.pkl'))
 scaled_x_train = scaler.transform(x_train)
 scaled_x_test = scaler.transform(input_data_test)
 
 
-scaler_y = joblib.load(file_path+'minmax_scaler_peak_label.joblib')
-scaler_error = joblib.load(file_path+'minmax_scaler_peak_error.joblib')
+scaler_y = joblib.load(os.path.join(args.input_data_dir, 'minmax_scaler_peak_label.joblib'))
+scaler_error = joblib.load(os.path.join(args.input_data_dir, 'minmax_scaler_peak_error.joblib'))
 
 scaled_y_train = scaler_y.transform(y_train)
 scaled_y_test = scaler_y.transform(output_test)

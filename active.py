@@ -4,6 +4,7 @@ import os, time
 import yaml
 import torch
 import numpy as np
+import GPy
 from model.models import predict_bnn, predict_gpr
 
 def main():
@@ -33,7 +34,7 @@ def main():
     y_remain = np.load(os.path.join(in_dir,  'scaled_y_remain.npy'), mmap_mode='r')
 
     if args.model == "gpr":
-        model = torch.load(os.path.join(in_dir, "model.pkl"))
+        model = GPy.load(os.path.join(in_dir, "model.pkl"))
         _, std_remain = predict_gpr(model, x_remain)
         idx = np.argsort(std_remain.flatten())[-args.n_new_samples:]
     else:

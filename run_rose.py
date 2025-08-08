@@ -47,10 +47,25 @@ def teach_single_pipeline(model, input_data_dir, config_file, pipeline_dir, num_
 def teach():
     submitted_pipelines = []
     async_pipeline = learner.as_async(teach_single_pipeline)
-    model = "gpr"
     input_data_dir = "/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/surrogate_AL/data/"
-    conf_list = ["/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/config/gpr.yaml", "/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/config/gpr_01.yaml"]
-    pipeline_dir_list = ["/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/experiment/test_04", "/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/experiment/test_05"]
+
+## This runs successfully, need to look log to confirm results are consistent with Fanbo's
+#    model               = "gpr"
+#    conf_list           = ["/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/config/gpr.yaml", 
+#                           "/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/config/gpr_01.yaml",
+#                           ]
+#    pipeline_dir_list   = ["/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/experiment/test_20",
+#                           "/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/experiment/test_21",
+#                           ]
+
+    model               = "bnn"
+    conf_list           = ["/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/config/bnn.yaml",
+                           "/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/config/bnn_01.yaml",
+                           ]
+    pipeline_dir_list   = ["/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/experiment/test_35",
+                           "/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/experiment/test_36",
+                           ]
+
     for config_file, pipeline_dir in zip(conf_list, pipeline_dir_list):
         submitted_pipelines.append(async_pipeline(model=model, input_data_dir=input_data_dir, config_file=config_file, pipeline_dir=pipeline_dir, num_iter=10, num_new_samples=10))
     [p.result() for p in submitted_pipelines]

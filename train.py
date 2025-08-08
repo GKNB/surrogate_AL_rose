@@ -4,6 +4,7 @@ import yaml
 import torch
 import numpy as np
 from model.models import BayesianNeuralNetwork, train_bnn, train_gpr, predict_bnn, predict_gpr
+from torch.utils.data import TensorDataset, DataLoader
 from utils import calculate_rmse
 import json
 
@@ -26,10 +27,10 @@ def main():
     out_dir = os.path.join(args.pipeline_dir, f"iter_{args.iteration:03d}")
     test_dir = os.path.join(args.pipeline_dir, f"iter_001")
 
-    x_train  = np.load(os.path.join(out_dir,  'scaled_x_train.npy'),  mmap_mode='r')
-    y_train  = np.load(os.path.join(out_dir,  'scaled_y_train.npy'),  mmap_mode='r')
-    x_test   = np.load(os.path.join(test_dir, 'scaled_x_test.npy'),   mmap_mode='r')
-    y_test   = np.load(os.path.join(test_dir, 'scaled_y_test.npy'),   mmap_mode='r')
+    x_train  = np.load(os.path.join(out_dir,  'scaled_x_train.npy'),  mmap_mode='r').copy() 
+    y_train  = np.load(os.path.join(out_dir,  'scaled_y_train.npy'),  mmap_mode='r').copy()
+    x_test   = np.load(os.path.join(test_dir, 'scaled_x_test.npy'),   mmap_mode='r').copy()
+    y_test   = np.load(os.path.join(test_dir, 'scaled_y_test.npy'),   mmap_mode='r').copy()
 
     metrics = {
         'rmse': None,
@@ -86,7 +87,6 @@ def main():
                   cfg["grad_clip_norm"])
         train_time = time.time() - start_time
 
-        model.eval()
         with torch.no_grad():
             test_preds, test_std = predict_bnn(model, x_test.to(device), n_samples=cfg["n_mc_samples"]) # FIXME! What is n_mc_samples?
 
@@ -99,7 +99,7 @@ def main():
 
         print(f"Training time: {train_time:.2f} seconds | RMSE: {rmse:.4f}")
         print(f"Prediction stats: Mean={test_preds.mean().item():.4f} ± Std={test_std.mean().item():.4f}")
-        torch.save(model.to("cpu"), os.path.join(out_dir, "model.pkl"))
+        torch.save(model.state_dict(), os.path.join(out_dir, "model.pt"))
 
     else:
         raise Exception(f"Model of {args.model} currently not supported!!!")

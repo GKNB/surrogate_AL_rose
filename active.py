@@ -9,7 +9,6 @@ from model.models import predict_bnn, predict_gpr, BayesianNeuralNetwork
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--model", choices=["bnn","gpr"], required=True)
     p.add_argument("--config", required=True)
     p.add_argument("--iteration", type=int, default=0)
     p.add_argument("--n_new_samples", type=int, default=5)
@@ -21,7 +20,6 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 #    args = argparse.Namespace(
-#            model     = "gpr",
 #            config    = '/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/config/gpr.yaml',
 #            iteration = 1,
 #            data_dir  = '/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/experiment/test_01/'
@@ -37,11 +35,11 @@ def main():
     x_remain = np.load(os.path.join(in_dir,  'scaled_x_remain.npy'), mmap_mode='r').copy()
     y_remain = np.load(os.path.join(in_dir,  'scaled_y_remain.npy'), mmap_mode='r').copy()
 
-    if args.model == "gpr":
+    if cfg["model"] == "gpr":
         model = GPy.load(os.path.join(in_dir, "model.pkl"))
         _, std_remain = predict_gpr(model, x_remain)
         idx = np.argsort(std_remain.flatten())[-args.n_new_samples:]
-    else:
+    elif cfg["model"] == "bnn":
         n_features = x_train.shape[1]
         model = BayesianNeuralNetwork(
                   n_features,
@@ -57,6 +55,8 @@ def main():
         model.to(device).eval()
         _, std_remain = predict_bnn(model, torch.FloatTensor(x_remain).to(device), n_samples=cfg["n_mc_samples"])
         idx = np.argsort(std_remain.cpu().numpy())[-args.n_new_samples:]
+    else:
+        raise Exception(f"Model of {cfg['model']} currently not supported in {os.path.basename(__file__)}!!!")
 
     x_train_new = np.vstack([x_train, x_remain[idx]])
     y_train_new = np.vstack([y_train, y_remain[idx]])

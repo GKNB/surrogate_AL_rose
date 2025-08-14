@@ -10,6 +10,7 @@ from utils import preprocess_inputdata, compute_peak_density
 p = argparse.ArgumentParser()
 p.add_argument("--pipeline_dir", required=True)
 p.add_argument("--input_data_dir", required=True)
+p.add_argument("--seed", type=int, default=42)
 args = p.parse_args()
 
 #file_path= '/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/surrogate_AL/data/'
@@ -19,7 +20,7 @@ with open(os.path.join(args.input_data_dir, 'data_dump_density_preprocessed_test
     processed_all_data_preprocessed_test = pickle.load(handle)
 
 #reduce training set size by randomly excluding N data.
-np.random.seed(0)   #fix random seed
+np.random.seed(args.seed)   #fix random seed
 index_ = np.random.choice(len(processed_all_data_preprocessed_train.keys()), 3500,replace=False)  #change choice size to select reduced training samples
 excluded_index_ = np.delete(np.arange(0,len(processed_all_data_preprocessed_train.keys())), index_)
 train_ = {}
@@ -45,11 +46,10 @@ output_test, errors_test = compute_peak_density(input_data_test, output_test_raw
 #cross validation 
 #split ranges 0.8 to 1
 train_test_split = 1
-seed = 65231
 
 
-input_data_suff, output_suff,  errors_suff, z_data_shuff = shuffle(input_data, output_train, errors_train, z_data, random_state=seed)
-#input_data_suff, output_suff,  errors_suff, z_data_shuff = shuffle(input_data, output[:, :100], errors[:, :100], z_data[:, :100], random_state=seed)
+input_data_suff, output_suff,  errors_suff, z_data_shuff = shuffle(input_data, output_train, errors_train, z_data, random_state=args.seed)
+#input_data_suff, output_suff,  errors_suff, z_data_shuff = shuffle(input_data, output[:, :100], errors[:, :100], z_data[:, :100], random_state=args.seed)
 
 train_test_split_ = int(input_data_suff.shape[0]*train_test_split)
 
@@ -68,7 +68,7 @@ z_data_train = z_data_shuff[0:train_test_split_]#.astype("float64")
 z_data_test = z_data_shuff[train_test_split_:]#.astype("float64")
 
 
-#x_train, x_test, y_train, y_test = spliter.train_test_split(input_data, output, test_size=(1-train_test_split), random_state=100)
+#x_train, x_test, y_train, y_test = spliter.train_test_split(input_data, output, test_size=(1-train_test_split), random_state=args.seed)
 
 print("Train input: ", x_train.shape)
 print("Train Output", y_train.shape)

@@ -10,14 +10,12 @@ import json
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--model", choices=["bnn","gpr"], required=True)
     p.add_argument("--config", required=True)
     p.add_argument("--iteration", type=int, default=1)
     p.add_argument("--pipeline_dir", required=True)
     args = p.parse_args()
 
 #    args = argparse.Namespace(
-#            model     = "gpr",
 #            config    = '/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/config/gpr.yaml',
 #            iteration = 1,
 #            pipeline_dir  = '/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/experiment/test_01/'
@@ -39,7 +37,7 @@ def main():
         'std': None
     }
 
-    if args.model == "gpr":
+    if cfg["model"] == "gpr":
         start_time = time.time()
         model = train_gpr(x_train, y_train,
                           cfg["kernel_variance"],
@@ -59,7 +57,7 @@ def main():
         print(f"Training time: {train_time:.2f} seconds | RMSE: {rmse:.4f}")
         print(f"Prediction stats: Mean={np.mean(mean):.4f} ± Std={np.mean(std):.4f}")
 
-    elif args.model == "bnn":
+    elif cfg["model"] == "bnn":
         n_features = x_train.shape[1]
         x_train = torch.FloatTensor(x_train)
         y_train = torch.FloatTensor(y_train)
@@ -102,7 +100,7 @@ def main():
         torch.save(model.state_dict(), os.path.join(out_dir, "model.pt"))
 
     else:
-        raise Exception(f"Model of {args.model} currently not supported!!!")
+        raise Exception(f"Model of {cfg['model']} currently not supported in {os.path.basename(__file__)}!!!")
 
     with open(os.path.join(out_dir, 'metrics.json'), 'w') as f:
         json.dump(metrics, f)

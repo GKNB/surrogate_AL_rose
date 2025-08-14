@@ -23,28 +23,27 @@ async def main():
 
     #FIXME!! I am utility task!!
     @learner.simulation_task
-    async def bootstrap(*args, pipeline_dir, input_data_dir):
-        return f'{code_path}/bootstrap.py --pipeline_dir {pipeline_dir} --input_data_dir {input_data_dir}'
+    async def bootstrap(*args, pipeline_dir, input_data_dir, seed):
+        return f'{code_path}/bootstrap.py --pipeline_dir {pipeline_dir} --input_data_dir {input_data_dir} --seed {seed}'
     
     #FIXME!! For this two tasks, need to specify if using GPU, and other variables!!
     @learner.training_task
-    async def training(*args, model, config_file, iteration, pipeline_dir):
-        return f'{code_path}/train.py --model {model} --config {config_file} --iteration {iteration} --pipeline_dir {pipeline_dir}'
+    async def training(*args, config_file, iteration, pipeline_dir):
+        return f'{code_path}/train.py --config {config_file} --iteration {iteration} --pipeline_dir {pipeline_dir}'
 
     @learner.active_learn_task
-    async def active_learning(*args, model, config_file, iteration, pipeline_dir, num_new_samples):
-        return f'{code_path}/active.py --model {model} --config {config_file} --iteration {iteration} --pipeline_dir {pipeline_dir} --n_new_samples {num_new_samples}'
+    async def active_learning(*args, config_file, iteration, pipeline_dir, num_new_samples):
+        return f'{code_path}/active.py --config {config_file} --iteration {iteration} --pipeline_dir {pipeline_dir} --n_new_samples {num_new_samples}'
 
-    async def teach_single_pipeline(model, input_data_dir, config_file, pipeline_dir, num_iter, num_new_samples):
+    async def teach_single_pipeline(input_data_dir, config_file, pipeline_dir, num_iter, num_new_samples, seed):
         iter_id = 1
         print("Start doing bootstrap (only once!)")
 
-        bs = await bootstrap(pipeline_dir=pipeline_dir, input_data_dir=input_data_dir)
+        bs = await bootstrap(pipeline_dir=pipeline_dir, input_data_dir=input_data_dir, seed=seed)
 
         while iter_id < num_iter:   # n iter means in total n traning and n-1 al
             print(f"Start doing iteration {iter_id}")
             train = training(
-                    model=model, 
                     config_file=config_file, 
                     iteration=iter_id, 
                     pipeline_dir=pipeline_dir)
@@ -53,7 +52,6 @@ async def main():
             else:
                 active_learn = await active_learning(
                         train, 
-                        model=model, 
                         config_file=config_file, 
                         iteration=iter_id, 
                         pipeline_dir=pipeline_dir, 
@@ -64,34 +62,25 @@ async def main():
         submitted_pipelines = []
 
         input_data_dir = "/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/surrogate_AL/data/"
-    
-#gpr: This runs successfully, need to look log to confirm results are consistent with Fanbo's
-        model               = "gpr"
+
+        seed_list = [42,46]
         conf_list           = ["/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/config/gpr.yaml", 
-                               "/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/config/gpr_01.yaml",
+                               "/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/config/bnn.yaml",
                                ]
-        pipeline_dir_list   = ["/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/experiment/test_40",
-                               "/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/experiment/test_41",
+        pipeline_dir_list   = ["/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/experiment/test_72",
+                               "/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/experiment/test_73",
                                ]
     
-# bnn: This runs successfully, need to look log to confirm results are consistent with Fanbo's
-#        model               = "bnn"
-#        conf_list           = ["/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/config/bnn.yaml",
-#                               "/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/config/bnn_01.yaml",
-#                               ]
-#        pipeline_dir_list   = ["/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/experiment/test_37",
-#                               "/pscratch/sd/u/usatlas/globus-compute-test/Tianle_test/nano-confinement/rose_exp_1/experiment/test_38",
-#                               ]
     
-        for config_file, pipeline_dir in zip(conf_list, pipeline_dir_list):
+        for config_file, pipeline_dir, seed in zip(conf_list, pipeline_dir_list, seed_list):
             submitted_pipelines.append(
                     teach_single_pipeline(
-                        model=model, 
                         input_data_dir=input_data_dir, 
                         config_file=config_file, 
                         pipeline_dir=pipeline_dir, 
                         num_iter=10, 
-                        num_new_samples=10))
+                        num_new_samples=10,
+                        seed=seed))
 
         results = await asyncio.gather(*submitted_pipelines)
 
